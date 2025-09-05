@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .icon { margin: 10px; }
+        canvas { border: 1px solid #ccc; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Tab Splitter Icon Generator</h1>
+    <p>Right-click on each canvas and "Save image as" to create the icon files.</p>
+    
+    <div class="icon">
+        <h3>16x16</h3>
+        <canvas id="icon16" width="16" height="16"></canvas>
+    </div>
+    
+    <div class="icon">
+        <h3>32x32</h3>
+        <canvas id="icon32" width="32" height="32"></canvas>
+    </div>
+    
+    <div class="icon">
+        <h3>48x48</h3>
+        <canvas id="icon48" width="48" height="48"></canvas>
+    </div>
+    
+    <div class="icon">
+        <h3>128x128</h3>
+        <canvas id="icon128" width="128" height="128"></canvas>
+    </div>
+
+    <script>
+        function drawIcon(canvas, size) {
+            const ctx = canvas.getContext('2d');
+            const scale = size / 128;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+            
+            // Background
+            ctx.fillStyle = '#1a73e8';
+            ctx.roundRect(0, 0, size, size, size * 0.15625);
+            ctx.fill();
+            
+            // Left panel
+            ctx.fillStyle = '#ffffff';
+            const leftX = size * 0.0625;
+            const leftY = size * 0.15625;
+            const leftW = size * 0.40625;
+            const leftH = size * 0.6875;
+            ctx.roundRect(leftX, leftY, leftW, leftH, size * 0.03125);
+            ctx.fill();
+            
+            // Right panel
+            const rightX = size * 0.53125;
+            const rightY = size * 0.15625;
+            const rightW = size * 0.40625;
+            const rightH = size * 0.6875;
+            ctx.roundRect(rightX, rightY, rightW, rightH, size * 0.03125);
+            ctx.fill();
+            
+            // Left panel content
+            ctx.fillStyle = '#1a73e8';
+            ctx.fillRect(leftX + size * 0.03125, leftY + size * 0.03125, leftW * 0.846, size * 0.03125);
+            
+            ctx.fillStyle = '#dadce0';
+            ctx.fillRect(leftX + size * 0.09375, leftY + size * 0.09375, leftW * 0.615, size * 0.015625);
+            ctx.fillRect(leftX + size * 0.09375, leftY + size * 0.125, leftW * 0.692, size * 0.015625);
+            ctx.fillRect(leftX + size * 0.09375, leftY + size * 0.15625, leftW * 0.538, size * 0.015625);
+            
+            // Right panel content
+            ctx.fillStyle = '#1a73e8';
+            ctx.fillRect(rightX + size * 0.03125, rightY + size * 0.03125, rightW * 0.846, size * 0.03125);
+            
+            ctx.fillStyle = '#dadce0';
+            ctx.fillRect(rightX + size * 0.09375, rightY + size * 0.09375, rightW * 0.615, size * 0.015625);
+            ctx.fillRect(rightX + size * 0.09375, rightY + size * 0.125, rightW * 0.692, size * 0.015625);
+            ctx.fillRect(rightX + size * 0.09375, rightY + size * 0.15625, rightW * 0.538, size * 0.015625);
+        }
+        
+        // Add roundRect method if not available
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius) {
+                this.beginPath();
+                this.moveTo(x + radius, y);
+                this.lineTo(x + width - radius, y);
+                this.quadraticCurveTo(x + width, y, x + width, y + radius);
+                this.lineTo(x + width, y + height - radius);
+                this.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                this.lineTo(x + radius, y + height);
+                this.quadraticCurveTo(x, y + height, x, y + height - radius);
+                this.lineTo(x, y + radius);
+                this.quadraticCurveTo(x, y, x + radius, y);
+                this.closePath();
+            };
+        }
+        
+        // Generate all icons
+        drawIcon(document.getElementById('icon16'), 16);
+        drawIcon(document.getElementById('icon32'), 32);
+        drawIcon(document.getElementById('icon48'), 48);
+        drawIcon(document.getElementById('icon128'), 128);
+    </script>
+</body>
+</html>
