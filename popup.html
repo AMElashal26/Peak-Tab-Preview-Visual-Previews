@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tab Splitter</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1 class="title">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M3 3h18v2H3V3zm0 4h18v2H3V7zm0 4h18v2H3v-2zm0 4h18v2H3v-2zm0 4h18v2H3v-2z"/>
+        </svg>
+        Tab Splitter
+      </h1>
+    </header>
+
+    <main class="main">
+      <div class="tabs-container">
+        <h2 class="section-title">Select Tabs to Split</h2>
+        
+        <div class="tab-selection">
+          <div class="tab-group">
+            <label class="tab-label">Left Window</label>
+            <select id="leftTabSelect" class="tab-select">
+              <option value="">Select a tab...</option>
+            </select>
+          </div>
+          
+          <div class="tab-group">
+            <label class="tab-label">Right Window</label>
+            <select id="rightTabSelect" class="tab-select">
+              <option value="">Select a tab...</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="quick-actions">
+          <button id="splitCurrentAndNext" class="btn btn-secondary">
+            Split Current & Next
+          </button>
+          <button id="splitFirstTwo" class="btn btn-secondary">
+            Split First Two
+          </button>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="splitButton" class="btn btn-primary" disabled>
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3 3h18v2H3V3zm0 4h18v2H3V7zm0 4h18v2H3v-2zm0 4h18v2H3v-2zm0 4h18v2H3v-2z"/>
+          </svg>
+          Split Windows
+        </button>
+      </div>
+    </main>
+
+    <div id="statusMessage" class="status-message hidden"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
