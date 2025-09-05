@@ -3,6 +3,9 @@
  * Handles window management and tab operations
  */
 
+// Track reference windows
+const referenceWindows = new Set();
+
 /**
  * Split current window into two side-by-side windows
  * @param {number} leftTabId - ID of the tab to place in left window
@@ -121,6 +124,140 @@ async function getTabInfo(tabId) {
   }
 }
 
+/**
+ * Create a reference window for a tab
+ * @param {number} tabId - ID of the tab to place in reference window
+ * @returns {Promise<Object>} Result object with success status and window ID
+ */
+async function createReferenceWindow(tabId) {
+  try {
+    // Validate input
+    if (!tabId || typeof tabId !== 'number') {
+      return { success: false, error: 'Invalid tab ID provided' };
+    }
+
+    // Check if we've reached the maximum number of reference windows
+    if (referenceWindows.size >= 3) {
+      return { success: false, error: 'Maximum of 3 reference windows allowed' };
+    }
+
+    // Verify tab exists
+    try {
+      const tab = await chrome.tabs.get(tabId);
+      if (!tab) {
+        return { success: false, error: 'Tab not found' };
+      }
+    } catch (error) {
+      return { success: false, error: 'Tab not accessible' };
+    }
+
+    // Get current window information
+    const currentWindow = await chrome.windows.getCurrent({ populate: true });
+    const { width, height, left, top } = currentWindow;
+
+    // Calculate reference window dimensions (20% width, full height)
+    const referenceWidth = Math.floor(width * 0.2);
+    const referenceHeight = height;
+
+    // Calculate reference window position (at right edge of current window)
+    const referenceLeft = left + width;
+    const referenceTop = top;
+
+    // Create reference window
+    const referenceWindow = await chrome.windows.create({
+      tabId: tabId,
+      left: referenceLeft,
+      top: referenceTop,
+      width: referenceWidth,
+      height: referenceHeight,
+      focused: false,
+      type: 'normal'
+    });
+
+    // Track the reference window
+    referenceWindows.add(referenceWindow.id);
+
+    console.log('Reference window created:', {
+      windowId: referenceWindow.id,
+      tabId: tabId,
+      dimensions: { width: referenceWidth, height: referenceHeight },
+      position: { left: referenceLeft, top: referenceTop }
+    });
+
+    return { 
+      success: true, 
+      windowId: referenceWindow.id,
+      tabId: tabId,
+      dimensions: { width: referenceWidth, height: referenceHeight }
+    };
+
+  } catch (error) {
+    console.error('Error creating reference window:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Close a specific reference window
+ * @param {number} windowId - ID of the reference window to close
+ * @returns {Promise<Object>} Result object with success status
+ */
+async function closeReferenceWindow(windowId) {
+  try {
+    if (!referenceWindows.has(windowId)) {
+      return { success: false, error: 'Window is not a tracked reference window' };
+    }
+
+    await chrome.windows.remove(windowId);
+    referenceWindows.delete(windowId);
+
+    console.log('Reference window closed:', windowId);
+    return { success: true, windowId: windowId };
+
+  } catch (error) {
+    console.error('Error closing reference window:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Close all reference windows
+ * @returns {Promise<Object>} Result object with success status
+ */
+async function closeAllReferenceWindows() {
+  try {
+    const closePromises = Array.from(referenceWindows).map(windowId => 
+      chrome.windows.remove(windowId).catch(error => {
+        console.error(`Error closing reference window ${windowId}:`, error);
+        return null;
+      })
+    );
+
+    await Promise.all(closePromises);
+    const closedCount = referenceWindows.size;
+    referenceWindows.clear();
+
+    console.log('All reference windows closed:', closedCount);
+    return { success: true, closedCount: closedCount };
+
+  } catch (error) {
+    console.error('Error closing all reference windows:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Get list of current reference windows
+ * @returns {Object} Object with reference window information
+ */
+function getReferenceWindows() {
+  return {
+    success: true,
+    windows: Array.from(referenceWindows),
+    count: referenceWindows.size
+  };
+}
+
 // Message handling from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   (async () => {
@@ -154,6 +291,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           }
           break;
           
+        case 'createReferenceWindow':
+          const referenceResult = await createReferenceWindow(request.tabId);
+          sendResponse(referenceResult);
+          break;
+          
+        case 'closeReferenceWindow':
+          const closeResult = await closeReferenceWindow(request.windowId);
+          sendResponse(closeResult);
+          break;
+          
+        case 'closeAllReferenceWindows':
+          const closeAllResult = await closeAllReferenceWindows();
+          sendResponse(closeAllResult);
+          break;
+          
+        case 'getReferenceWindows':
+          const refWindows = getReferenceWindows();
+          sendResponse(refWindows);
+          break;
+          
         default:
           sendResponse({ success: false, error: 'Unknown action' });
       }
@@ -165,6 +322,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   
   // Return true to indicate we will send a response asynchronously
   return true;
+});
+
+// Handle window close events to clean up reference windows
+chrome.windows.onRemoved.addListener((windowId) => {
+  if (referenceWindows.has(windowId)) {
+    referenceWindows.delete(windowId);
+    console.log('Reference window closed and removed from tracking:', windowId);
+  }
 });
 
 // Handle extension installation
